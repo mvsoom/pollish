@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block page_content %}
-    <h1>Hello, World!</h1>
-    Testing...
+<h1>pollish</h1>
+
+<!-- Login Button -->
+<button type="button" class="btn btn-primary">Login</button>
+
+<!-- Upload Files Button -->
+<label class="btn btn-secondary">
+    Upload Files
+    <input type="file" style="display: none;">
+</label>
+
+<!-- Text Edit Field -->
+<div class="form-group">
+    <label for="textEdit">Text Edit Field</label>
+    <textarea class="form-control" id="textEdit" rows="5"></textarea>
+</div>
+
+<!-- External JavaScript -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="{% static 'home.js' %}"></script>
 {% endblock page_content %}
