@@ -33,7 +33,7 @@ function invokePolisher(textEdit) {
     let state = hash(text);
 
     let sentences = text.split('.');
-    sentences.pop(); // Remove the last element, which is an empty string
+    sentences.pop(); // Remove the last element, which is always an empty string
     let lastSentence = sentences.pop() + '.';
 
     console.log(sentences);
@@ -51,7 +51,7 @@ function invokePolisher(textEdit) {
             textNow = textEdit.val();
             let stateNow = hash(textNow.substring(0, text.length));
             if (stateNow !== state) {
-                console.log('Changed state');
+                console.log('Changed state: nothing replaced');
                 return;
             }
 

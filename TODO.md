@@ -3,6 +3,7 @@
 ## During development
 
 - [ ] Set up CI
+  - requirements.txt
 - [ ] Set up CD
 - [ ] LlamaIndex Integration; see Anyscale docs
 
