@@ -1,50 +1,69 @@
 $(document).ready(function () {
-    // Function to make a request to ChatGPT API
-    function improveLastSentenceWithChatGPT() {
-        let textArea = $('#textEdit');
-        let text = textArea.val();
+    let textEdit = $('#textEdit');
 
-        // Find the last sentence
-        let lastPeriodIndex = text.lastIndexOf('.');
-        if (lastPeriodIndex !== -1) {
-            let lastSentence = text.substring(lastPeriodIndex + 1).trim();
-
-            // Make a request to ChatGPT API (replace 'YOUR_OPENAI_API_KEY' with your actual API key)
-            const apiKey = 'XXX';
-            const apiUrl = 'https://api.openai.com/v1/chat/completions';
-            const messages = [{ 'role': 'system', 'content': 'You are a helpful assistant.' }, { 'role': 'user', 'content': `Improve the following sentence: ${lastSentence}` }];
-
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: messages
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.choices && data.choices.length > 0) {
-                    let improvedSentence = data.choices[0].message.content.trim();
-                    let newText = text.substring(0, lastPeriodIndex + 1) + " " + improvedSentence;
-
-                    // Update the text area
-                    textArea.val(newText);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-    }
-
-    // Event listener for keypress events
-    $('#textEdit').on('keypress', function (e) {
-        // Check if Ctrl key is pressed (event.ctrlKey) and if the pressed key is "."
+    textEdit.on('keydown', function (e) {
         if (e.ctrlKey && e.key === '.') {
-            console.log('Ctrl+. pressed');
-            improveLastSentenceWithChatGPT();
+            e.preventDefault(); // Prevent default browser behavior for this key combination
+            appendDot(textEdit);
+            invokePolisher(textEdit);
         }
     });
 });
+
+function appendDot(textEdit) {
+    let cursorPosition = textEdit[0].selectionStart;
+    textEdit[0].setRangeText('.', cursorPosition, cursorPosition, 'end');
+}
+
+function hash(text) {
+    /* Simple hash function for strings */
+    return Array.from(text).reduce(
+        (hash, char) => (hash << 5) - hash + char.charCodeAt(0) | 0, 0
+    );
+}
+
+function invokePolisher(textEdit) {
+    let text = textEdit.val();
+    
+    /* Assert that the last character is a dot */
+    if (text[text.length - 1] !== '.') {
+        return;
+    }
+
+    let state = hash(text);
+
+    let sentences = text.split('.');
+    sentences.pop(); // Remove the last element, which is an empty string
+    let lastSentence = sentences.pop() + '.';
+
+    console.log(sentences);
+    console.log(lastSentence);
+    console.log(state);
+
+    fetch('/polish_sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sentence: lastSentence })
+    })
+        .then(response => response.json())
+        .then(data => {
+            /* Ensure nothing has changed up until the last sentence... */
+            textNow = textEdit.val();
+            let stateNow = hash(textNow.substring(0, text.length));
+            if (stateNow !== state) {
+                console.log('Changed state');
+                return;
+            }
+
+            /* ... so that we can safely replace the last sentence. */
+            let from = text.length - lastSentence.length;
+            let to = text.length;
+            textEdit[0].setRangeText(
+                data.polished_sentence, from, to,
+                text.length === textNow.length? 'end' : 'preserve'
+            );
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}

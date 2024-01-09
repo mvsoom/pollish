@@ -4,6 +4,7 @@
 
 - [ ] Set up CI
 - [ ] Set up CD
+- [ ] LlamaIndex Integration; see Anyscale docs
 
 ## For deployment
 
