@@ -36,14 +36,19 @@ function invokePolisher(textEdit) {
     sentences.pop(); // Remove the last element, which is always an empty string
     let lastSentence = sentences.pop() + '.';
 
+    /* Restore a leading space later if present */
+    let leadingWhitespace = lastSentence[0] === ' ';
+    trimmedLastSentence = lastSentence.trim();
+
     console.log(sentences);
     console.log(lastSentence);
     console.log(state);
+    console.log(leadingWhitespace);
 
     fetch('/polish_sentence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sentence: lastSentence })
+        body: JSON.stringify({ sentence: trimmedLastSentence })
     })
         .then(response => response.json())
         .then(data => {
@@ -56,10 +61,12 @@ function invokePolisher(textEdit) {
             }
 
             /* ... so that we can safely replace the last sentence. */
+            console.log(data.polished_sentence);
+            let polishedSentence = (leadingWhitespace? ' ' : '') + data.polished_sentence;
             let from = text.length - lastSentence.length;
             let to = text.length;
             textEdit[0].setRangeText(
-                data.polished_sentence, from, to,
+                polishedSentence, from, to,
                 text.length === textNow.length? 'end' : 'preserve'
             );
         })
