@@ -1,80 +1,98 @@
 $(document).ready(function () {
-    let textEdit = $('#textEdit');
+  let textEdit = $('#textEdit')
 
-    textEdit.on('keydown', function (e) {
-        if (e.ctrlKey && e.key === '.') {
-            e.preventDefault(); // Prevent default browser behavior for this key combination
-            appendDot(textEdit);
-            invokePolisher(textEdit);
-        }
-    });
-});
+  textEdit.on('keydown', function (e) {
+    if (e.ctrlKey && e.key === '.') {
+      textArea = textEdit[0]
+      text = getTextUntilCursor(textArea)
 
-function appendDot(textEdit) {
-    let cursorPosition = textEdit[0].selectionStart;
-    textEdit[0].setRangeText('.', cursorPosition, cursorPosition, 'end');
+      /*
+       * Prevent default browser behavior for this key combination
+       * and manually insert a dot. If the cursor is already at a dot,
+       * simply repolish the sentence.
+       */
+      e.preventDefault()
+      if (text[text.length - 1] !== '.') {
+        text += '.'
+        appendDot(textArea)
+      }
+
+      invokePolisher(text, textArea)
+    }
+  })
+})
+
+function getTextUntilCursor(textArea) {
+  let cursorPosition = textArea.selectionStart
+  return textArea.value.substring(0, cursorPosition)
+}
+
+function appendDot(textArea) {
+  let cursorPosition = textArea.selectionStart
+  textArea.setRangeText('.', cursorPosition, cursorPosition, 'end')
 }
 
 function hash(text) {
-    /* Simple hash function for strings */
-    return Array.from(text).reduce(
-        (hash, char) => (hash << 5) - hash + char.charCodeAt(0) | 0, 0
-    );
+  /* Simple hash function for strings */
+  return Array.from(text).reduce(
+    (hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0,
+    0
+  )
 }
 
-function invokePolisher(textEdit) {
-    /* Get the text until the cursor position */
-    let cursorPosition = textEdit[0].selectionStart;
-    let text = textEdit.val().substring(0, cursorPosition);
-    console.log(text);
-    
-    /* Assert that the last character is a dot */
-    if (text[text.length - 1] !== '.') {
-        return;
-    }
+function invokePolisher(text, textArea) {
+  console.log(text)
 
-    let state = hash(text);
+  /* Assert that the last character is a dot */
+  if (text[text.length - 1] !== '.') {
+    return
+  }
 
-    let sentences = text.split('.');
-    sentences.pop(); // Remove the last element, which is always an empty string
-    let lastSentence = sentences.pop() + '.';
+  let state = hash(text)
 
-    /* Restore a leading space later if present */
-    let leadingWhitespace = lastSentence[0] === ' ';
-    trimmedLastSentence = lastSentence.trim();
+  let sentences = text.split('.')
+  sentences.pop() // Remove the last element, which is always an empty string
+  let lastSentence = sentences.pop() + '.'
 
-    console.log(sentences);
-    console.log(lastSentence);
-    console.log(state);
-    console.log(leadingWhitespace);
+  /* Restore a leading space later if present */
+  let leadingWhitespace = lastSentence[0] === ' '
+  trimmedLastSentence = lastSentence.trim()
 
-    fetch('/polish_sentence', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sentence: trimmedLastSentence })
+  console.log(sentences)
+  console.log(lastSentence)
+  console.log(state)
+  console.log(leadingWhitespace)
+
+  fetch('/polish_sentence', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sentence: trimmedLastSentence })
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.polished_sentence)
+
+      /* Ensure nothing has changed up until the last sentence... */
+      textNow = textArea.value
+      let stateNow = hash(textNow.substring(0, text.length))
+      if (stateNow !== state) {
+        console.log('Changed state: nothing replaced')
+        return
+      }
+
+      /* ... so that we can safely replace the last sentence. */
+      let polishedSentence =
+        (leadingWhitespace ? ' ' : '') + data.polished_sentence
+      let from = text.length - lastSentence.length
+      let to = text.length
+      textArea.setRangeText(
+        polishedSentence,
+        from,
+        to,
+        text.length === textNow.length ? 'end' : 'preserve'
+      )
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data.polished_sentence);
-
-            /* Ensure nothing has changed up until the last sentence... */
-            textNow = textEdit.val();
-            let stateNow = hash(textNow.substring(0, text.length));
-            if (stateNow !== state) {
-                console.log('Changed state: nothing replaced');
-                return;
-            }
-
-            /* ... so that we can safely replace the last sentence. */
-            let polishedSentence = (leadingWhitespace? ' ' : '') + data.polished_sentence;
-            let from = text.length - lastSentence.length;
-            let to = text.length;
-            textEdit[0].setRangeText(
-                polishedSentence, from, to,
-                text.length === textNow.length? 'end' : 'preserve'
-            );
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+    .catch(error => {
+      console.error('Error:', error)
+    })
 }
