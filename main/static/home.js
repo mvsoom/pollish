@@ -23,7 +23,10 @@ function hash(text) {
 }
 
 function invokePolisher(textEdit) {
-    let text = textEdit.val();
+    /* Get the text until the cursor position */
+    let cursorPosition = textEdit[0].selectionStart;
+    let text = textEdit.val().substring(0, cursorPosition);
+    console.log(text);
     
     /* Assert that the last character is a dot */
     if (text[text.length - 1] !== '.') {
