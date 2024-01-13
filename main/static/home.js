@@ -52,6 +52,8 @@ function invokePolisher(textEdit) {
     })
         .then(response => response.json())
         .then(data => {
+            console.log(data.polished_sentence);
+
             /* Ensure nothing has changed up until the last sentence... */
             textNow = textEdit.val();
             let stateNow = hash(textNow.substring(0, text.length));
@@ -61,7 +63,6 @@ function invokePolisher(textEdit) {
             }
 
             /* ... so that we can safely replace the last sentence. */
-            console.log(data.polished_sentence);
             let polishedSentence = (leadingWhitespace? ' ' : '') + data.polished_sentence;
             let from = text.length - lastSentence.length;
             let to = text.length;

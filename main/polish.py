@@ -1,51 +1,55 @@
-import openai
-from decouple import config
 import json
 
-CLIENT = openai.OpenAI(
-    base_url=config("OPENAI_BASE_URL"),
-    api_key=config("OPENAI_API_KEY"),
-)
+import openai
+from decouple import config
 
 MODEL = config("OPENAI_MODEL")
 
+TEMPERATURE = 0.7
 
-def polish(sentence):
-    prompt =\
- f"""
+SYSTEM_PROMPT = "You are a helpful assistant that outputs in JSON."
+
+USER_PROMPT = """\
 # INSTRUCTIONS
-Improve the sentence below, and output only the improved sentence in the `polished_sentence` field.
-If the sentence is nonsensical, output the original sentence in the `polished_sentence` field.
-Pay attention to capitalization and punctuation.
+- Output a refined version of the input sentence below in `polished_sentence`, or "" if the input is e.g. too malformed.
+- Ensure correct capitalization and punctuation.
 
 # SENTENCE
-{sentence}
+{0}\
 """
-    response = CLIENT.chat.completions.create(
+
+RESPONSE_FORMAT = {
+    "type": "json_object",
+    "schema": {
+        "type": "object",
+        "properties": {"polished_sentence": {"type": "string"}},
+        "required": ["polished_sentence"],
+    },
+}
+
+
+def polish(sentence):
+    client = openai.OpenAI(
+        base_url=config("OPENAI_BASE_URL"),
+        api_key=config("OPENAI_API_KEY"),
+    )
+
+    response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant that outputs in JSON.",
+                "content": SYSTEM_PROMPT,
             },
             {
                 "role": "user",
-                "content": prompt,
+                "content": USER_PROMPT.format(sentence),
             },
         ],
-        response_format={
-            "type": "json_object",
-            "schema": {
-                "type": "object",
-                "properties": {"polished_sentence": {"type": "string"}},
-                "required": ["polished_sentence"],
-            },
-        },
-        temperature=0.7,
+        response_format=RESPONSE_FORMAT,
+        temperature=TEMPERATURE,
     )
 
-    # Parse the JSON content of the response
     content = json.loads(response.choices[0].message.content)
-
-    polished_sentence = content["polished_sentence"]
-    return polished_sentence
+    polished_sentence = content["polished_sentence"].strip()
+    return polished_sentence if polished_sentence else sentence
