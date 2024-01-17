@@ -9,6 +9,10 @@
 - [x] FIXME: Can't polish sentences in mid of paragraph
 - Use https://naturalnode.github.io/natural/Tokenizers.html
 
+- Read source of these extension for accessing text content anywhere: https://blaze.today/blog/writing-extensions-for-chrome/
+- https://stackoverflow.com/questions/4418958/insert-text-in-a-textarea-text-input-at-the-cursor-when-code-is-being-executed
+- https://www.google.com/search?q=chrome+extension+insert+text
+
 ### Ideas
 
 - [ ] CTRL + ENTER to polish entire paragraphs
